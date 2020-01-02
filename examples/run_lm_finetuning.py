@@ -51,7 +51,8 @@ from transformers import (WEIGHTS_NAME, AdamW, get_linear_schedule_with_warmup,
                                   RobertaConfig, RobertaForMaskedLM, RobertaTokenizer,
                                   DistilBertConfig, DistilBertForMaskedLM, DistilBertTokenizer,
                                   CamembertConfig, CamembertForMaskedLM, CamembertTokenizer)
-
+from barkds.preprocessors.neural import NeuralPreprocessor
+from barkds.preprocessors.simple import SimplePreprocessor
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
