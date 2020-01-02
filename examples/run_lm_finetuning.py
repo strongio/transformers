@@ -247,12 +247,6 @@ def train(args, train_dataset, model, tokenizer):
                                                           output_device=args.local_rank,
                                                           find_unused_parameters=True)
 
-    # Train!
-    logger.info("***** Evaluate testing set performance before finetuning *****")
-    pretrained_model = model_class.from_pretrained(args.model_name_or_path)
-    pretrained_model.to(args.device)
-    result = evaluate(args, pretrained_model, tokenizer, prefix="")
-
     logger.info("***** Running training *****")
     logger.info("  Num examples = %d", len(train_dataset))
     logger.info("  Num Epochs = %d", args.num_train_epochs)
@@ -572,6 +566,12 @@ def main():
         torch.distributed.barrier()  # End of barrier to make sure only the first process in distributed training download model & vocab
 
     logger.info("Training/evaluation parameters %s", args)
+
+    # evaluate pretrained model performance
+    logger.info("***** Evaluate testing set performance before finetuning *****")
+    pretrained_model = model_class.from_pretrained(args.model_name_or_path)
+    pretrained_model.to(args.device)
+    result = evaluate(args, pretrained_model, tokenizer, prefix="")
 
     # Training
     if args.do_train:
