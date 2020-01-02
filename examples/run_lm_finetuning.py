@@ -52,6 +52,21 @@ from transformers import (WEIGHTS_NAME, AdamW, get_linear_schedule_with_warmup,
 
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('[%(asctime)s] %(levelname)-8s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+
+# set console printing
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
+# set file saving
+log_name = datetime.datetime.now().strftime('lm-finetune_%Y-%m-%d_%H-%M.log')
+fh = logging.FileHandler(r'./%s'%log_name)
+fh.setLevel(logging.DEBUG)
+fh.setFormatter(formatter)
+logger.addHandler(fh)
 
 
 MODEL_CLASSES = {
