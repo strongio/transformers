@@ -78,11 +78,28 @@ class TextDataset(Dataset):
             logger.info("Creating features from dataset file at %s", directory)
 
             self.examples = []
-            with open(file_path, encoding="utf-8") as f:
-                text = f.read()
+            with open(file_path, 'r', encoding="utf-8") as f:
+                text_list = [l for l in (line.strip() for line in f) if l]
 
-            tokenized_text = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(text))
+            # build preprocessors
+            logger.info("Constructing SimplePreprocessor and NeuralPreprocessor")
+            simple_preprocessor = SimplePreprocessor()
+            neural_preprocessor = NeuralPreprocessor()
+            # run preprocessors
+            logger.info("Running SimplePreprocessor in parallel")
+            text_list = simple_preprocessor.process(text_list, num_cpus=-1)
+            logger.info("Running NeuralPreprocessor in parallel")
+            text_list = neural_preprocessor.process(text_list, num_cpus=-1)
 
+            # tokenize and convert to IDs
+            logger.info("Tokenize texts in parallel")
+            tokens =  parmap.map(tokenizer.tokenize, text_list, pm_processes=None, pm_pbar=True)
+            logger.info("Convert tokens to interger IDs in parallel")
+            token_IDs =  parmap.map(tokenizer.convert_tokens_to_ids, tokens, pm_processes=None, pm_pbar=True)
+            logger.info("Flattening tokenized text")
+            tokenized_text = [item for sublist in token_IDs for item in sublist] # flatten
+
+            logger.info(f"Cropping text into chunks of {block_size} tokens in sequence")
             for i in range(0, len(tokenized_text)-block_size+1, block_size): # Truncate in block of block_size
                 self.examples.append(tokenizer.build_inputs_with_special_tokens(tokenized_text[i:i+block_size]))
             # Note that we are loosing the last truncated example here for the sake of simplicity (no padding)
@@ -248,7 +265,7 @@ def train(args, train_dataset, model, tokenizer):
     for _ in train_iterator:
         epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
         for step, batch in enumerate(epoch_iterator):
-            
+
             # Skip past any already trained steps if resuming training
             if steps_trained_in_current_epoch > 0:
                 steps_trained_in_current_epoch -= 1
@@ -580,7 +597,7 @@ def main():
         for checkpoint in checkpoints:
             global_step = checkpoint.split('-')[-1] if len(checkpoints) > 1 else ""
             prefix = checkpoint.split('/')[-1] if checkpoint.find('checkpoint') != -1 else ""
-            
+
             model = model_class.from_pretrained(checkpoint)
             model.to(args.device)
             result = evaluate(args, model, tokenizer, prefix=prefix)
