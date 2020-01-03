@@ -332,7 +332,7 @@ def train(args, train_dataset, model, tokenizer):
                     training_metrics['loss'].append(current_loss)
                     training_metrics['perplexity'].append(current_perplexity)
 
-                    logger.info(f"Step {global_step:>10}: lr = {current_lr:1.2e}, loss = {current_loss:.5f}, perplexity = {current_perplexity:.ff}")
+                    logger.info(f"Step {global_step:>10}: lr = {current_lr:1.2e}, loss = {current_loss:.5f}, perplexity = {current_perplexity:.4f}")
                     logging_loss = tr_loss
 
                 if args.local_rank in [-1, 0] and args.save_steps > 0 and global_step % args.save_steps == 0:
