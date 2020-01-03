@@ -319,6 +319,10 @@ def train(args, train_dataset, model, tokenizer):
                             tb_writer.add_scalar('eval_{}'.format(key), value, global_step)
                     tb_writer.add_scalar('lr', scheduler.get_lr()[0], global_step)
                     tb_writer.add_scalar('loss', (tr_loss - logging_loss)/args.logging_steps, global_step)
+                    current_lr = scheduler.get_lr()[0]
+                    current_loss = (tr_loss - logging_loss)/args.logging_steps
+                    current_perplexity = np.exp(current_loss)
+                    logger.info(f"Step {global_step}: lr = {current_lr:.5f}, loss = {current_loss:.4f}, perplexity = {current_perplexity:.3f}")
                     logging_loss = tr_loss
 
                 if args.local_rank in [-1, 0] and args.save_steps > 0 and global_step % args.save_steps == 0:
