@@ -322,7 +322,7 @@ def train(args, train_dataset, model, tokenizer):
                     current_lr = scheduler.get_lr()[0]
                     current_loss = (tr_loss - logging_loss)/args.logging_steps
                     current_perplexity = np.exp(current_loss)
-                    logger.info(f"Step {global_step}: lr = {current_lr:.5f}, loss = {current_loss:.4f}, perplexity = {current_perplexity:.3f}")
+                    logger.info(f"Step {global_step:>10}: lr = {current_lr:1.2e}, loss = {current_loss:.5f}, perplexity = {current_perplexity:.ff}")
                     logging_loss = tr_loss
 
                 if args.local_rank in [-1, 0] and args.save_steps > 0 and global_step % args.save_steps == 0:
