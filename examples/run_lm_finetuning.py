@@ -356,6 +356,9 @@ def train(args, train_dataset, model, tokenizer):
                     with open(os.path.join(output_dir, 'training_metrics.pkl'), 'wb') as handle:
                         pickle.dump(training_metrics, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+                if args.local_rank in [-1, 0] and args.logging_steps > 0 and global_step % (4*args.logging_steps) == 0: # calculate validation metrics
+                    model.to(args.device)
+                    result = evaluate(args, model, tokenizer, prefix="")
             if args.max_steps > 0 and global_step > args.max_steps:
                 epoch_iterator.close()
                 break
