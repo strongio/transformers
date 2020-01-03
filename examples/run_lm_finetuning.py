@@ -278,7 +278,7 @@ def train(args, train_dataset, model, tokenizer):
     training_metrics['lr'] = []
     training_metrics['loss'] = []
     training_metrics['perplexity'] = []
-
+    training_metrics['val_perplexity'] = []
     for _ in train_iterator:
         epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
         for step, batch in enumerate(epoch_iterator):
@@ -357,8 +357,9 @@ def train(args, train_dataset, model, tokenizer):
                         pickle.dump(training_metrics, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
                 if args.local_rank in [-1, 0] and args.logging_steps > 0 and global_step % (4*args.logging_steps) == 0: # calculate validation metrics
+                    result = evaluate(args, model, tokenizer, prefix="", not_training=False)
+                    training_metrics['val_perplexity'].append(result['perplexity'])
                     model.to(args.device)
-                    result = evaluate(args, model, tokenizer, prefix="")
             if args.max_steps > 0 and global_step > args.max_steps:
                 epoch_iterator.close()
                 break
@@ -372,7 +373,7 @@ def train(args, train_dataset, model, tokenizer):
     return global_step, tr_loss / global_step, training_metrics
 
 
-def evaluate(args, model, tokenizer, prefix=""):
+def evaluate(args, model, tokenizer, prefix="", not_training=True):
     # Loop to handle MNLI double evaluation (matched, mis-matched)
     eval_output_dir = args.output_dir
 
@@ -387,7 +388,7 @@ def evaluate(args, model, tokenizer, prefix=""):
     eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=args.eval_batch_size)
 
     # multi-gpu evaluate
-    if args.n_gpu > 1:
+    if args.n_gpu > 1 and not_training:
         model = torch.nn.DataParallel(model)
 
     # Eval!
