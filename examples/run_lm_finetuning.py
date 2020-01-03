@@ -620,7 +620,7 @@ def main():
 
         # save final training metrics
         with open(os.path.join(args.output_dir, 'training_metrics.pkl'), 'wb') as handle:
-            pickle.dump(training_metrics, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(tr_metrics, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
         # Load a trained model and vocabulary that you have fine-tuned
         model = model_class.from_pretrained(args.output_dir)
