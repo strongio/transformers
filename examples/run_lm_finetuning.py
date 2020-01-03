@@ -273,6 +273,12 @@ def train(args, train_dataset, model, tokenizer):
     model.zero_grad()
     train_iterator = trange(epochs_trained, int(args.num_train_epochs), desc="Epoch", disable=args.local_rank not in [-1, 0])
     set_seed(args)  # Added here for reproducibility (even between python 2 and 3)
+    training_metrics = {}
+    training_metrics['steps'] = args.logging_steps
+    training_metrics['lr'] = []
+    training_metrics['loss'] = []
+    training_metrics['perplexity'] = []
+
     for _ in train_iterator:
         epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
         for step, batch in enumerate(epoch_iterator):
@@ -322,7 +328,11 @@ def train(args, train_dataset, model, tokenizer):
                     current_lr = scheduler.get_lr()[0]
                     current_loss = (tr_loss - logging_loss)/args.logging_steps
                     current_perplexity = np.exp(current_loss)
-                    logger.info(f"Step {global_step:>10}: lr = {current_lr:1.2e}, loss = {current_loss:.5f}, perplexity = {current_perplexity:.ff}")
+                    training_metrics['lr'].append(current_lr)
+                    training_metrics['loss'].append(current_loss)
+                    training_metrics['perplexity'].append(current_perplexity)
+
+                    logger.info(f"Step {global_step:>10}: lr = {current_lr:1.2e}, loss = {current_loss:.5f}, perplexity = {current_perplexity:.4f}")
                     logging_loss = tr_loss
 
                 if args.local_rank in [-1, 0] and args.save_steps > 0 and global_step % args.save_steps == 0:
@@ -340,9 +350,11 @@ def train(args, train_dataset, model, tokenizer):
 
                     _rotate_checkpoints(args, checkpoint_prefix)
 
+                    logger.info("Saving optimizer, scheduler states, and training metrics to %s", output_dir)
                     torch.save(optimizer.state_dict(), os.path.join(output_dir, 'optimizer.pt'))
                     torch.save(scheduler.state_dict(), os.path.join(output_dir, 'scheduler.pt'))
-                    logger.info("Saving optimizer and scheduler states to %s", output_dir)
+                    with open(os.path.join(output_dir, 'training_metrics.pkl'), 'wb') as handle:
+                        pickle.dump(training_metrics, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
             if args.max_steps > 0 and global_step > args.max_steps:
                 epoch_iterator.close()
@@ -354,7 +366,7 @@ def train(args, train_dataset, model, tokenizer):
     if args.local_rank in [-1, 0]:
         tb_writer.close()
 
-    return global_step, tr_loss / global_step
+    return global_step, tr_loss / global_step, training_metrics
 
 
 def evaluate(args, model, tokenizer, prefix=""):
@@ -582,7 +594,7 @@ def main():
         if args.local_rank == 0:
             torch.distributed.barrier()
 
-        global_step, tr_loss = train(args, train_dataset, model, tokenizer)
+        global_step, tr_loss, tr_metrics = train(args, train_dataset, model, tokenizer)
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
 
 
@@ -601,6 +613,10 @@ def main():
 
         # Good practice: save your training arguments together with the trained model
         torch.save(args, os.path.join(args.output_dir, 'training_args.bin'))
+
+        # save final training metrics
+        with open(os.path.join(args.output_dir, 'training_metrics.pkl'), 'wb') as handle:
+            pickle.dump(training_metrics, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
         # Load a trained model and vocabulary that you have fine-tuned
         model = model_class.from_pretrained(args.output_dir)
