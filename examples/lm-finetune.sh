@@ -1,11 +1,9 @@
-export TRAIN_FILE=/home/kuangwei/bark/text-en/notebooks/distil-prototype/data/wikitext2/wikitext-2-raw/wiki.train.raw
-export TEST_FILE=/home/kuangwei/bark/text-en/notebooks/distil-prototype/data/wikitext2/wikitext-2-raw/wiki.test.raw
-export EVAL_PATH=/home/kuangwei
+export TRAIN_FILE=/home/kuangwei/bark/text-en/notebooks/distil-prototype/data/wikitext-2-raw/wiki.train.raw
+export TEST_FILE=/home/kuangwei/bark/text-en/notebooks/distil-prototype/data/wikitext-2-raw/wiki.test.raw
 python run_lm_finetuning.py \
     --output_dir=output-wiki2 \
     --model_type=distilbert \
     --model_name_or_path=distilbert-base-uncased \
-    --eval_model_path=$EVAL_PATH \
     --do_train \
     --train_data_file=$TRAIN_FILE \
     --do_eval \
