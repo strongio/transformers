@@ -564,7 +564,7 @@ def main():
 
     # evaluate pretrained model performance
     logger.info("***** Evaluate testing set performance before finetuning *****")
-    pretrained_model = model_class.from_pretrained(args.model_name_or_path)
+    pretrained_model = model_class.from_pretrained(args.eval_model_path)
     pretrained_model.to(args.device)
     result = evaluate(args, pretrained_model, tokenizer, prefix="")
 
