@@ -429,7 +429,8 @@ def main():
                         help="Train with masked-language modeling loss instead of language modeling.")
     parser.add_argument("--mlm_probability", type=float, default=0.15,
                         help="Ratio of tokens to mask for masked language modeling loss")
-
+    parser.add_argument("--eval_model_path", default="distilbert-base-uncased", type=str,
+                        help="The model used to run pretraining evaluation")
     parser.add_argument("--config_name", default="", type=str,
                         help="Optional pretrained config name or path if not the same as model_name_or_path")
     parser.add_argument("--tokenizer_name", default="", type=str,
