@@ -82,7 +82,7 @@ class TextDataset(Dataset):
         directory, filename = os.path.split(file_path)
         cached_features_file = os.path.join(directory, args.model_name_or_path + '_cached_lm_' + str(block_size) + '_' + filename)
 
-        if os.path.exists(cached_features_file) and not args.overwrite_cache:
+        if os.path.exists(cached_features_file) and not args.overwrite_cache and not args.reprocess:
             logger.info("Loading features from cached file %s", cached_features_file)
             with open(cached_features_file, 'rb') as handle:
                 self.examples = pickle.load(handle)
@@ -100,8 +100,9 @@ class TextDataset(Dataset):
             # run preprocessors
             logger.info("Running SimplePreprocessor in parallel")
             text_list = simple_preprocessor.process(text_list, num_cpus=-1)
-            logger.info("Running NeuralPreprocessor in parallel")
-            text_list = neural_preprocessor.process(text_list, num_cpus=-1)
+            if args.use_neural:
+                logger.info("Running NeuralPreprocessor in parallel")
+                text_list = neural_preprocessor.process(text_list, num_cpus=-1)
 
             # tokenize and convert to IDs
             logger.info("Tokenize texts in parallel")
@@ -469,6 +470,10 @@ def main():
                         help="Run evaluation during training at each logging step.")
     parser.add_argument("--do_lower_case", action='store_true',
                         help="Set this flag if you are using an uncased model.")
+    parser.add_argument("--use_neural", default=False, type=bool,
+                        help="If true, use NeuralPreprocessor")
+    parser.add_argument("--reprocess", default=False, type=bool,
+                        help="If true, re-preprocess texts again")
 
     parser.add_argument("--per_gpu_train_batch_size", default=4, type=int,
                         help="Batch size per GPU/CPU for training.")
